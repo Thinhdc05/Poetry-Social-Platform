@@ -76,36 +76,81 @@ Người dùng chưa cần đăng nhập nhưng có thể xem các bài thơ m�
 
 ```text
 Mở trang chủ
-  → thấy danh sách bài thơ
+  → thấy danh sách bài thơ mẫu
   → bấm vào một bài
   → xem chi tiết bài thơ
   → quay lại danh sách
 ```
 
-### Việc cần làm
+### Chi tiết từng bước triển khai (Step-by-step Plan)
 
-- Tạo type `Poem`.
-- Tạo dữ liệu mẫu trong một file tạm.
-- Làm `MainLayout`, `Header`, `Footer`.
-- Làm `PoemCard`.
-- Làm `PoemListPage`.
-- Làm `PoemDetailPage`.
-- Cấu hình React Router.
-- Xử lý:
-  - loading giả lập nếu cần;
-  - bài thơ không tồn tại;
-  - danh sách rỗng.
+- **Bước 1: Định nghĩa Type dữ liệu**
+  - File: `src/features/poems/poems.types.ts`
+  - Khai báo interface `Poem` gồm: `id` (string), `title` (string), `content` (string), `author` (string), `createdAt` (string), `excerpt` (string, optional).
+  - Đảm bảo type safety, không dùng `any`.
 
-### Hoàn thành khi
+- **Bước 2: Tạo dữ liệu mẫu & hàm truy xuất**
+  - File: `src/features/poems/poems.api.ts`
+  - Tạo mảng hằng số `MOCK_POEMS: Poem[]` gồm 3 bài thơ tiếng Việt mộc mạc, có nhiều khổ/dòng (`\n`).
+  - Viết các hàm helper đồng bộ:
+    - `getMockPoems(): Poem[]`
+    - `getMockPoemById(id: string): Poem | undefined`
 
-- Có thể chuyển trang bằng URL.
-- Có thể xem danh sách và chi tiết.
-- Refresh trang chi tiết không làm app lỗi.
+- **Bước 3: Cài đặt Tailwind CSS v4 & Thiết lập Style "Thơ Mộc"**
+  - Cài đặt: `tailwindcss` và `@tailwindcss/vite`
+  - File: `vite.config.ts`, `src/styles/index.css`
+  - Cấu hình plugin `@tailwindcss/vite` và `@import "tailwindcss";`
+  - Tận dụng bảng màu mộc mạc sẵn có của Tailwind (`stone`, `amber`, `neutral`) cho giao diện đọc thơ.
+
+- **Bước 4: Xây dựng Layout & Navigation cơ bản**
+  - File: `src/components/layout/Header.tsx`, `src/components/layout/Footer.tsx`, `src/layouts/MainLayout.tsx`
+  - `Header`: Logo "Thơ Mộc" (link về `/`), tagline mộc mạc.
+  - `Footer`: Chân trang thông tin tối giản.
+  - `MainLayout`: Bọc Header, Footer và `<Outlet />` trong container căn giữa.
+
+- **Bước 5: Xây dựng Component hiển thị thẻ thơ (PoemCard)**
+  - File: `src/components/poem/PoemCard.tsx`
+  - Hiển thị tiêu đề thơ, tác giả, ngày đăng, đoạn trích ngắn (`excerpt` hoặc 2 dòng đầu).
+  - Bọc thẻ trong `<Link to={`/poems/${poem.id}`}>` với hover effect nhẹ nhàng.
+
+- **Bước 6: Xây dựng Trang danh sách bài thơ (HomePage)**
+  - File: `src/pages/home/HomePage.tsx`
+  - Lấy danh sách từ `getMockPoems()`.
+  - Hiển thị lưới/danh sách `PoemCard`.
+  - Xử lý trạng thái danh sách rỗng (Empty state) nếu không có bài thơ nào.
+
+- **Bước 7: Xây dựng Trang chi tiết bài thơ (PoemDetailPage)**
+  - File: `src/pages/poems/PoemDetailPage.tsx`
+  - Lấy `id` từ `useParams()`.
+  - Tìm bài thơ bằng `getMockPoemById(id)`.
+  - Nếu tìm thấy: hiển thị nút "← Quay lại danh sách", tiêu đề, tác giả, ngày đăng, nội dung thơ giữ nguyên định dạng xuống dòng (`white-space: pre-line`).
+  - Nếu không tìm thấy: hiển thị giao diện Not Found thân thiện ("Không tìm thấy bài thơ") và nút quay về trang chủ.
+
+- **Bước 8: Cấu hình Router & Tích hợp vào App**
+  - File: `src/app/routes.tsx`, `src/app/App.tsx`
+  - Cấu hình route: `/` (HomePage), `/poems/:id` (PoemDetailPage), `*` (Not Found fallback).
+  - Tích hợp `RouterProvider` vào `App.tsx`.
+
+- **Bước 9: Kiểm tra Type Safety & Build**
+  - Chạy `npm run build` để kiểm tra TypeScript compilation và Vite build.
+
+### Checklist nghiệm thu (Acceptance Checklist)
+
+- [x] **1. Type Definition**: `src/features/poems/poems.types.ts` khai báo đầy đủ interface `Poem`.
+- [x] **2. Mock Data**: `src/features/poems/poems.api.ts` có 3 bài thơ mẫu tiếng Việt + hàm `getMockPoems()`, `getMockPoemById(id)`.
+- [x] **3. Layout & Styling**: `MainLayout`, `Header`, `Footer` và CSS cơ bản hiển thị cân đối, phong cách mộc mạc.
+- [x] **4. Trang chủ**: `HomePage` tại route `/` hiển thị đúng danh sách 3 bài thơ qua `PoemCard`.
+- [x] **5. Điều hướng**: Bấm vào `PoemCard` chuyển hướng chính xác đến `/poems/:id`.
+- [x] **6. Chi tiết bài thơ**: `PoemDetailPage` hiển thị đúng tiêu đề, tác giả, ngày tạo, xuống dòng thơ nguyên vẹn.
+- [x] **7. Nút quay lại**: Nút quay về danh sách trên `PoemDetailPage` hoạt động mượt mà.
+- [x] **8. Xử lý 404 / Not Found**: Truy cập ID không tồn tại hiển thị thông báo lỗi rõ ràng và có nút quay về trang chủ.
+- [x] **9. Tính cô lập**: Không gọi Supabase DB/Auth trong task này.
+- [x] **10. Build & Type check**: Chạy `npm run build` thành công, không có lỗi type nào.
 
 ### Commit
 
 ```text
-feat: add poem list and detail flow
+feat: add poem list and detail flow with mock data
 ```
 
 ---
