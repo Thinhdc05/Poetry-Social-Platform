@@ -161,77 +161,93 @@ feat: add poem list and detail flow with mock data
 
 Tạo backend thật nhưng chưa cần tích hợp toàn bộ frontend ngay.
 
-### Việc cần làm
+### Checklist nghiệm thu (Đã hoàn thành)
 
-- Tạo tài khoản Supabase.
-- Tạo project mới.
-- Tạo database cho:
-  - `profiles`
-  - `poems`
-  - `tags`
-  - `poem_tags`
-  - `comments`
-- Xác định quan hệ giữa các bảng.
-- Tạo `supabaseClient.ts`.
-- Thêm:
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
-- Không commit `.env.local`.
-
-### Hoàn thành khi
-
-- Có thể mở Table Editor của Supabase.
-- Có thể nhìn thấy các bảng.
-- Frontend tạo được Supabase client.
-- Build không làm lộ secret hoặc key không cần thiết.
-
-### Commit
-
-```text
-chore: configure supabase client and database
-```
+- [x] **1. Database Schema**: Đã tạo project Supabase và các bảng `profiles`, `poems`, `tags`, `poem_tags`, `comments`.
+- [x] **2. Triggers & RLS**: Đã bật Email Auth, trigger tạo profile tự động khi user đăng ký, và RLS cơ bản.
+- [x] **3. Môi trường**: Đã cấu hình `.env.local` với `VITE_SUPABASE_URL` và `VITE_SUPABASE_ANON_KEY`.
+- [x] **4. Client SDK**: Đã tạo `src/lib/supabaseClient.ts` kết nối an toàn với Supabase.
 
 ---
 
-## Giai đoạn 3 — Luồng đăng ký, đăng nhập và đăng xuất
+## Giai đoạn 3 — Luồng đăng ký, đăng nhập và đăng xuất (Supabase Auth)
 
 ### Mục tiêu
 
-Người dùng có tài khoản và frontend biết người dùng hiện tại là ai.
+Người dùng có thể đăng ký tài khoản mới, đăng nhập, duy trì phiên làm việc (session) khi refresh trang, và đăng xuất an toàn.
 
 ### Luồng cần hoàn thành
 
 ```text
 Mở trang đăng ký
-  → nhập email và password
-  → tạo tài khoản
-  → đăng nhập
-  → thấy trạng thái đã đăng nhập
-  → đăng xuất
+  → nhập email, password, tên hiển thị
+  → bấm đăng ký (tài khoản được tạo trên Supabase)
+  → đăng nhập vào hệ thống
+  → Header hiển thị thông tin người dùng
+  → F5 refresh trang vẫn giữ phiên đăng nhập
+  → bấm đăng xuất (quay về trạng thái khách)
 ```
 
-### Việc cần làm
+### Chi tiết từng bước triển khai (Step-by-step Plan)
 
-- Làm `RegisterPage`.
-- Làm `LoginPage`.
-- Làm `AuthLayout`.
-- Viết các hàm trong `features/auth/auth.api.ts`:
-  - `signUp`
-  - `signIn`
-  - `signOut`
-  - `getCurrentUser`
-- Viết `useAuth`.
-- Lắng nghe thay đổi session.
-- Hiển thị loading và error rõ ràng.
-- Tạo profile sau khi đăng ký nếu cần.
+- **Bước 1: Định nghĩa Type cho Auth**
+  - File: `src/features/auth/auth.types.ts`
+  - Khai báo interface: `SignUpInput`, `SignInInput`, `UserProfile`.
 
-### Hoàn thành khi
+- **Bước 2: Viết các hàm Auth API với Supabase**
+  - File: `src/features/auth/auth.api.ts`
+  - Các hàm gọi trực tiếp `supabase.auth`:
+    - `signUp({ email, password, fullName })`
+    - `signIn({ email, password })`
+    - `signOut()`
+    - `getCurrentSession()`
+    - `getCurrentUser()`
 
-- Đăng ký được tài khoản thật.
-- Đăng nhập được.
-- Refresh trang vẫn giữ session.
-- Đăng xuất được.
-- Sai email/password có thông báo lỗi.
+- **Bước 3: Tạo AuthContext & Hook `useAuth`**
+  - File: `src/features/auth/useAuth.ts` (hoặc Context Provider trong `src/app/providers.tsx`)
+  - Quản lý `user`, `session`, `loading`.
+  - Lắng nghe sự kiện `supabase.auth.onAuthStateChange` để tự động đồng bộ trạng thái đăng nhập toàn ứng dụng.
+
+- **Bước 4: Xây dựng Layout cho Auth (AuthLayout)**
+  - File: `src/layouts/AuthLayout.tsx`
+  - Giao diện khung thẻ căn giữa (Centered Card), logo Thơ Mộc, liên kết quay về trang chủ.
+
+- **Bước 5: Xây dựng Trang Đăng ký (RegisterPage)**
+  - File: `src/pages/auth/RegisterPage.tsx`
+  - Form nhập: Email, Mật khẩu, Tên hiển thị.
+  - Xử lý submit, loading state, hiển thị thông báo lỗi từ Supabase nếu có.
+
+- **Bước 6: Xây dựng Trang Đăng nhập (LoginPage)**
+  - File: `src/pages/auth/LoginPage.tsx`
+  - Form nhập: Email, Mật khẩu.
+  - Xử lý submit, báo lỗi nếu sai tài khoản/mật khẩu, chuyển hướng sau khi thành công.
+
+- **Bước 7: Cập nhật Header hiển thị trạng thái User**
+  - File: `src/components/layout/Header.tsx`
+  - Nếu chưa đăng nhập: Nút "Đăng nhập", "Đăng ký".
+  - Nếu đã đăng nhập: Hiển thị tên/email + nút "Đăng xuất".
+
+- **Bước 8: Cấu hình Routes cho Auth**
+  - File: `src/app/routes.tsx`
+  - Thêm route `/login` và `/register`.
+
+- **Bước 9: Kiểm tra thực tế & Build**
+  - Đăng ký tài khoản thật $\rightarrow$ Đăng nhập $\rightarrow$ Refresh $\rightarrow$ Đăng xuất.
+  - Chạy `npm run build` đảm bảo không có lỗi type.
+
+### Checklist nghiệm thu (Acceptance Checklist)
+
+- [x] **1. Auth Types**: `src/features/auth/auth.types.ts` định nghĩa đầy đủ interface cần thiết.
+- [x] **2. Auth API**: `src/features/auth/auth.api.ts` bao bọc đầy đủ các phương thức Auth của Supabase.
+- [x] **3. Session Management**: Hook/Context `useAuth` lắng nghe `onAuthStateChange` chuẩn xác.
+- [ ] **4. Auth Layout**: `AuthLayout.tsx` hiển thị trang nhã, tập trung.
+- [ ] **5. Trang Đăng ký**: `RegisterPage` cho phép tạo tài khoản thành công lên Supabase.
+- [ ] **6. Trang Đăng nhập**: `LoginPage` xác thực đúng email/password và lưu session.
+- [ ] **7. Xử lý lỗi & Loading**: Báo lỗi rõ ràng khi sai pass, email trùng hoặc mạng yếu.
+- [ ] **8. Header đồng bộ**: Header đổi giao diện linh hoạt giữa khách và người dùng đã đăng nhập.
+- [ ] **9. Duy trì Session**: Refresh (F5) trang không bị văng đăng nhập.
+- [ ] **10. Đăng xuất**: Nút đăng xuất xóa sạch session và đưa về trang chủ.
+- [ ] **11. Build & Type check**: `npm run build` vượt qua không lỗi.
 
 ### Commit
 
