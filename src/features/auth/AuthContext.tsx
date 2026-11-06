@@ -1,6 +1,6 @@
 import { createContext, useEffect, useState, ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabaseClient'
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { signOut as apiSignOut } from './auth.api'
 
 export interface AuthContextType {
@@ -18,11 +18,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
+    if (!isSupabaseConfigured) {
       setLoading(false)
-    })
+      return
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
 
     const {
       data: { subscription },
@@ -38,6 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const handleSignOut = async () => {
+    if (!isSupabaseConfigured) {
+      setUser(null)
+      setSession(null)
+      return
+    }
     await apiSignOut()
   }
 

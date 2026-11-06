@@ -13,6 +13,13 @@ export interface UserProfile {
   id: string
   email: string
   fullName?: string
+  bio?: string
   avatarUrl?: string
   role?: 'user' | 'admin'
+}
+
+export interface UpdateProfileInput {
+  fullName?: string
+  bio?: string
+  avatarUrl?: string
 }

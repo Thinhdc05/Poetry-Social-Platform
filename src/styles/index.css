@@ -1,1 +1,85 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-serif: 'Lora', Georgia, Cambria, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-stone-850: #201d1a;
+  --color-amber-850: #78350f;
+}
+
+:root {
+  --theme-bg: #f8f6f0;
+  --theme-surface: #ffffff;
+  --theme-border: #e6e0d2;
+  --theme-text: #262320;
+  --theme-text-muted: #6e675f;
+  --theme-accent: #8d3e09;
+}
+
+[data-theme="sepia"] {
+  --theme-bg: #f5eedc;
+  --theme-surface: #fbf6e8;
+  --theme-border: #e3d7be;
+  --theme-text: #3d3122;
+  --theme-text-muted: #786652;
+  --theme-accent: #873600;
+}
+
+[data-theme="dark"] {
+  --theme-bg: #121110;
+  --theme-surface: #1c1a18;
+  --theme-border: #2e2a26;
+  --theme-text: #eae5de;
+  --theme-text-muted: #9c958d;
+  --theme-accent: #d97706;
+}
+
+body {
+  background-color: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Lớp vân giấy mờ tạo xúc cảm tự nhiên */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Chữ cái đầu câu phóng lớn kiểu sách in (Drop Cap) */
+.drop-cap::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  line-height: 0.85;
+  float: left;
+  margin-right: 0.6rem;
+  margin-top: 0.2rem;
+  color: var(--theme-accent);
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
