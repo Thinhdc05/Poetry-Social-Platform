@@ -363,5 +363,53 @@ where p.id = u.id
   and u.raw_user_meta_data->>'full_name' is not null
   and trim(u.raw_user_meta_data->>'full_name') != '';
 
+-- 12. BẢNG THÔNG BÁO HOẠT ĐỘNG (NOTIFICATIONS) & REALTIME TRIGGERS
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  recipient_id uuid not null references public.profiles(id) on delete cascade,
+  actor_id uuid references public.profiles(id) on delete set null,
+  actor_name text not null default 'Bạn thơ',
+  actor_avatar text default '📜',
+  type text not null, -- 'comment' | 'like' | 'admin'
+  poem_id uuid references public.poems(id) on delete cascade,
+  poem_title text,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Người dùng xem thông báo của chính mình" on public.notifications;
+create policy "Người dùng xem thông báo của chính mình"
+on public.notifications for select
+to authenticated
+using (auth.uid() = recipient_id);
+
+drop policy if exists "Người dùng cập nhật trạng thái đã đọc" on public.notifications;
+create policy "Người dùng cập nhật trạng thái đã đọc"
+on public.notifications for update
+to authenticated
+using (auth.uid() = recipient_id)
+with check (auth.uid() = recipient_id);
+
+drop policy if exists "Hệ thống và người dùng có thể tạo thông báo" on public.notifications;
+create policy "Hệ thống và người dùng có thể tạo thông báo"
+on public.notifications for insert
+to authenticated
+with check (true);
+
+-- Bật Realtime cho bảng notifications
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end;
+$$;
+
 -- Tải lại cấu hình schema của PostgREST
 notify pgrst, 'reload schema';

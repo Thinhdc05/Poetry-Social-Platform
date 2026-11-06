@@ -3,6 +3,7 @@ import { useAuth } from '../../features/auth'
 import { useReading } from '../../features/reading'
 import { AmbientSoundBar } from '../reading'
 import { VermilionSeal } from '../common/VermilionSeal'
+import { NotificationBell } from '../notifications'
 import { Feather, Sun, Moon, Sparkles, LogOut, ShieldCheck } from 'lucide-react'
 
 export function Header() {
@@ -82,6 +83,9 @@ export function Header() {
                   <span className="hidden sm:inline">Quản sự</span>
                 </Link>
               )}
+
+              {/* Chuông Thông Báo Thi Hữu */}
+              <NotificationBell />
 
               <Link
                 to="/profile"

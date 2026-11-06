@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabaseClient'
+import { createNotification } from '../notifications'
 import type { ReactionType, ReactionCounts } from './reactions.types'
 
 const LOCAL_STORAGE_PREFIX = 'tho_moc_reactions_'
@@ -122,6 +123,39 @@ export async function togglePoemReaction(
 
     if (error) {
       console.warn('Supabase upsert poem_likes error, fallback local:', error.message)
+    } else {
+      // Gửi thông báo tâm đắc tới tác giả bài thơ
+      try {
+        const { data: poemData } = await supabase
+          .from('poems')
+          .select('author_id, title')
+          .eq('id', poemId)
+          .maybeSingle()
+
+        if (poemData?.author_id && poemData.author_id !== userId) {
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('full_name, display_name, avatar_url')
+            .eq('id', userId)
+            .maybeSingle()
+
+          const actorName =
+            userProfile?.full_name || userProfile?.display_name || 'Một thi hữu'
+
+          await createNotification({
+            recipientId: poemData.author_id,
+            actorId: userId,
+            actorName,
+            actorAvatar: userProfile?.avatar_url || '❤️',
+            type: 'like',
+            poemId,
+            poemTitle: poemData.title,
+            message: 'đã bày tỏ sự tâm đắc với thi phẩm của bạn',
+          })
+        }
+      } catch {
+        // Ignored
+      }
     }
   } catch (err) {
     console.warn('Network error when upserting reaction:', err)

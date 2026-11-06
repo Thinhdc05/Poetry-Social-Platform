@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
+import { createNotification } from '../notifications'
 import type { Comment, CreateCommentInput } from './comments.types'
 
 interface RawCommentItem {
@@ -86,6 +87,39 @@ export async function createComment(
     .single()
 
   if (error) throw error
+
+  // Tự động gửi thông báo cho tác giả bài thơ nếu có
+  try {
+    const { data: poemData } = await supabase
+      .from('poems')
+      .select('author_id, title')
+      .eq('id', input.poemId)
+      .maybeSingle()
+
+    if (poemData?.author_id && poemData.author_id !== userId) {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name, display_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle()
+
+      const actorName =
+        userProfile?.full_name || userProfile?.display_name || 'Một thi hữu'
+
+      await createNotification({
+        recipientId: poemData.author_id,
+        actorId: userId,
+        actorName,
+        actorAvatar: userProfile?.avatar_url || '📜',
+        type: 'comment',
+        poemId: input.poemId,
+        poemTitle: poemData.title,
+        message: 'đã gửi lời bình tâm đắc vào bài thơ của bạn',
+      })
+    }
+  } catch {
+    // Không làm gián đoạn luồng bình luận chính
+  }
 
   return {
     id: data.id,

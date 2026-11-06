@@ -355,3 +355,77 @@ export function usePoeticLounge() {
     sendMessage,
   }
 }
+
+export interface LoungeToast {
+  id: string
+  senderName: string
+  senderSeal: string
+  content: string
+}
+
+export function useLoungeUnread(isLoungeOpen: boolean) {
+  const { user } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [latestToast, setLatestToast] = useState<LoungeToast | null>(null)
+
+  useEffect(() => {
+    if (isLoungeOpen) {
+      setUnreadCount(0)
+      setLatestToast(null)
+    }
+  }, [isLoungeOpen])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+
+    const channel = supabase
+      .channel('tho-moc-lounge-unread')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'lounge_messages',
+        },
+        (payload) => {
+          if (!payload.new) return
+          const raw = payload.new as {
+            id: string
+            user_id?: string | null
+            sender_name: string
+            sender_seal?: string | null
+            content: string
+          }
+
+          // Không tăng unread nếu do chính mình gửi
+          if (user?.id && raw.user_id === user.id) return
+
+          // Nếu Trà Thất đang đóng thì tính là chưa đọc và bắn toast
+          if (!isLoungeOpen) {
+            setUnreadCount((prev) => prev + 1)
+            setLatestToast({
+              id: raw.id,
+              senderName: raw.sender_name || 'Khách Thơ',
+              senderSeal: raw.sender_seal || '📜',
+              content: raw.content,
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [isLoungeOpen, user?.id])
+
+  const clearToast = useCallback(() => {
+    setLatestToast(null)
+  }, [])
+
+  return {
+    unreadCount,
+    latestToast,
+    clearToast,
+  }
+}
