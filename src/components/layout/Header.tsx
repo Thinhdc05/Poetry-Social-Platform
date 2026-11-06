@@ -3,10 +3,10 @@ import { useAuth } from '../../features/auth'
 import { useReading } from '../../features/reading'
 import { AmbientSoundBar } from '../reading'
 import { VermilionSeal } from '../common/VermilionSeal'
-import { Feather, Sun, Moon, Sparkles, LogOut } from 'lucide-react'
+import { Feather, Sun, Moon, Sparkles, LogOut, ShieldCheck } from 'lucide-react'
 
 export function Header() {
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, signOut, isAdmin } = useAuth()
   const { theme, setTheme } = useReading()
   const navigate = useNavigate()
 
@@ -72,6 +72,17 @@ export function Header() {
             <div className="w-20 h-8 bg-stone-200/60 dark:bg-stone-800 rounded-lg animate-pulse" />
           ) : user ? (
             <div className="flex items-center gap-2 sm:gap-2.5">
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  title="Bàn Quản Sự Thi Quán (Admin)"
+                  className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 bg-amber-900/10 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-900 dark:text-amber-300 text-xs font-serif font-medium transition-colors"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                  <span className="hidden sm:inline">Quản sự</span>
+                </Link>
+              )}
+
               <Link
                 to="/profile"
                 title="Trang cá nhân & Quản lý bài thơ của tôi"

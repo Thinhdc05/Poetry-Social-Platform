@@ -10,7 +10,9 @@ import { AuthorPage } from '../pages/authors/AuthorPage'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { NotFoundPage } from '../pages/common/NotFoundPage'
+import { AdminPage } from '../pages/admin/AdminPage'
 import { ProtectedRoute } from '../components/auth/ProtectedRoute'
+import { RoleGuard } from '../components/auth/RoleGuard'
 import { RouteErrorBoundary } from '../components/common/RouteErrorBoundary'
 
 export const router = createBrowserRouter([
@@ -54,6 +56,14 @@ export const router = createBrowserRouter([
       {
         path: 'poets/:authorName',
         element: <AuthorPage />,
+      },
+      {
+        path: 'admin',
+        element: (
+          <RoleGuard>
+            <AdminPage />
+          </RoleGuard>
+        ),
       },
       {
         path: '*',

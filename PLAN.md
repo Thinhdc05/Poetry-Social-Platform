@@ -659,24 +659,24 @@ chore: prepare project for demo
 
 ## Checklist tổng kết
 
-- [ ] Project chạy được.
-- [ ] Xem danh sách thơ.
-- [ ] Xem chi tiết thơ.
-- [ ] Đăng ký.
-- [ ] Đăng nhập.
-- [ ] Đăng xuất.
-- [ ] Tạo bài thơ.
-- [ ] Sửa bài thơ của mình.
-- [ ] Xóa bài thơ của mình.
-- [ ] Tag.
-- [ ] Tìm kiếm.
-- [ ] Lọc.
-- [ ] Comment.
-- [ ] Upload ảnh.
-- [ ] Comment realtime.
-- [ ] Profile.
-- [ ] Phân quyền User/Admin.
-- [ ] Admin quản lý nội dung.
-- [ ] Import JSON.
-- [ ] Responsive.
-- [ ] Deploy demo.
+- [x] Project chạy được.
+- [x] Xem danh sách thơ.
+- [x] Xem chi tiết thơ.
+- [x] Đăng ký.
+- [x] Đăng nhập.
+- [x] Đăng xuất.
+- [x] Tạo bài thơ.
+- [x] Sửa bài thơ của mình.
+- [x] Xóa bài thơ của mình.
+- [x] Tag.
+- [x] Tìm kiếm.
+- [x] Lọc.
+- [x] Comment.
+- [x] Upload ảnh.
+- [x] Comment realtime.
+- [x] Profile.
+- [x] Phân quyền User/Admin.
+- [x] Admin quản lý nội dung.
+- [x] Import JSON.
+- [x] Responsive.
+- [x] Deploy demo.

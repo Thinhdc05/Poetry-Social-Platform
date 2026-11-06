@@ -57,16 +57,16 @@ export function LoginPage() {
             htmlFor="email"
             className="block text-xs font-medium text-stone-700 mb-1"
           >
-            Địa chỉ Email
+            Tài khoản hoặc Email
           </label>
           <input
             id="email"
-            type="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="username"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="ban@example.com"
+            placeholder="admin hoặc ban@example.com"
             className="w-full px-3.5 py-2 text-sm bg-stone-50/50 border border-stone-300 rounded-lg focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700 transition-colors"
           />
         </div>

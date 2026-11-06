@@ -11,7 +11,11 @@ function ensureSupabaseConfigured() {
 
 function cleanEmail(email: string): string {
   // Loại bỏ khoảng trắng thừa, dấu ngoặc kép hoặc ký tự vô hình
-  return email.trim().replace(/^["']|["']$/g, '').toLowerCase()
+  const cleaned = email.trim().replace(/^["']|["']$/g, '').toLowerCase()
+  if (cleaned === 'admin') {
+    return 'admin@thomoc.vn'
+  }
+  return cleaned
 }
 
 // Đăng ký tài khoản mới kèm tên bút danh
@@ -77,19 +81,23 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, bio, avatar_url, role')
+      .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (error || !data) return null
 
+    const rec = data as Record<string, unknown>
+    const fullName = (rec.full_name as string) || (rec.display_name as string) || undefined
+    const roleRaw = ((rec.role as string) || 'USER').toLowerCase()
+
     return {
-      id: data.id,
+      id: rec.id as string,
       email: '',
-      fullName: data.full_name || undefined,
-      bio: data.bio || undefined,
-      avatarUrl: data.avatar_url || undefined,
-      role: (data.role as 'user' | 'admin') || 'user',
+      fullName,
+      bio: (rec.bio as string) || undefined,
+      avatarUrl: (rec.avatar_url as string) || undefined,
+      role: roleRaw === 'admin' ? 'admin' : 'user',
     }
   } catch {
     return null
