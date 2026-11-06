@@ -281,7 +281,8 @@ export function usePoeticLounge() {
             if (prev.some((m) => m.id === newMsg.id)) {
               return prev
             }
-            return [newMsg, ...prev].slice(0, 50)
+            // Thêm tin nhắn mới vào CUỐI danh sách để tin mới hiện ở dưới đáy
+            return [...prev, newMsg].slice(-50)
           })
         }
       )
@@ -328,7 +329,8 @@ export function usePoeticLounge() {
         type,
       }
 
-      setMessages((prev) => [optimisticMsg, ...prev].slice(0, 50))
+      // Cập nhật giao diện tức thì vào cuối danh sách (tin mới ở dưới cùng)
+      setMessages((prev) => [...prev, optimisticMsg].slice(-50))
 
       // Lưu thực tế vào Database
       const saved = await createLoungeMessage({

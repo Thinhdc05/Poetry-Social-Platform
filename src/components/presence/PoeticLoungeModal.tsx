@@ -26,7 +26,10 @@ export function PoeticLoungeModal({ isOpen, onClose }: PoeticLoungeModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 60)
+      return () => clearTimeout(timer)
     }
   }, [isOpen, messages.length])
 

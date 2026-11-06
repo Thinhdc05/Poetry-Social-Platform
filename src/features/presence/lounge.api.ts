@@ -29,7 +29,7 @@ function mapRawLoungeMessage(raw: RawLoungeMessage): LoungeMessage {
 /**
  * Lấy danh sách tin nhắn đàm đạo gần nhất từ Supabase Postgres
  */
-export async function getLoungeMessages(limit = 40): Promise<LoungeMessage[]> {
+export async function getLoungeMessages(limit = 50): Promise<LoungeMessage[]> {
   if (!isSupabaseConfigured) return []
 
   try {
@@ -43,7 +43,8 @@ export async function getLoungeMessages(limit = 40): Promise<LoungeMessage[]> {
       return []
     }
 
-    return (data as unknown as RawLoungeMessage[]).map(mapRawLoungeMessage)
+    // Đảo ngược lại để tin nhắn cũ ở trên, tin nhắn mới nhất xuất hiện ở dưới đáy (chuẩn UX Chat)
+    return (data as unknown as RawLoungeMessage[]).map(mapRawLoungeMessage).reverse()
   } catch {
     return []
   }
