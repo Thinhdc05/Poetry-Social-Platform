@@ -7,7 +7,10 @@ interface RawCommentItem {
   user_id: string
   content: string
   created_at: string
-  profiles?: { full_name?: string | null; avatar_url?: string | null } | { full_name?: string | null; avatar_url?: string | null }[] | null
+  profiles?:
+    | { full_name?: string | null; display_name?: string | null; avatar_url?: string | null }
+    | { full_name?: string | null; display_name?: string | null; avatar_url?: string | null }[]
+    | null
 }
 
 function mapRawComment(item: RawCommentItem): Comment {
@@ -16,10 +19,10 @@ function mapRawComment(item: RawCommentItem): Comment {
 
   if (item.profiles) {
     if (Array.isArray(item.profiles) && item.profiles.length > 0) {
-      authorName = item.profiles[0]?.full_name || 'Khách thơ'
+      authorName = item.profiles[0]?.full_name || item.profiles[0]?.display_name || 'Khách thơ'
       avatarUrl = item.profiles[0]?.avatar_url ?? undefined
     } else if (!Array.isArray(item.profiles)) {
-      authorName = item.profiles.full_name || 'Khách thơ'
+      authorName = item.profiles.full_name || item.profiles.display_name || 'Khách thơ'
       avatarUrl = item.profiles.avatar_url ?? undefined
     }
   }
@@ -46,7 +49,7 @@ export async function getCommentsByPoemId(poemId: string): Promise<Comment[]> {
   try {
     const resWithProfile = await supabase
       .from('comments')
-      .select('id, poem_id, user_id, content, created_at, profiles!user_id(full_name, avatar_url)')
+      .select('id, poem_id, user_id, content, created_at, profiles!user_id(full_name, display_name, avatar_url)')
       .eq('poem_id', poemId)
       .order('created_at', { ascending: true })
 

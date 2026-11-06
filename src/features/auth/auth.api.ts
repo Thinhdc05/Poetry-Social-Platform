@@ -22,13 +22,15 @@ function cleanEmail(email: string): string {
 export async function signUp({ email, password, fullName }: SignUpInput) {
   ensureSupabaseConfigured()
   const sanitizedEmail = cleanEmail(email)
+  const trimmedName = fullName.trim()
 
   const { data, error } = await supabase.auth.signUp({
     email: sanitizedEmail,
     password,
     options: {
       data: {
-        full_name: fullName.trim(),
+        full_name: trimmedName,
+        display_name: trimmedName,
       },
     },
   })
@@ -111,8 +113,12 @@ export async function updateProfile(
 ): Promise<void> {
   ensureSupabaseConfigured()
 
-  const updates: { full_name?: string; bio?: string; avatar_url?: string } = {}
-  if (input.fullName !== undefined) updates.full_name = input.fullName.trim()
+  const updates: { full_name?: string; display_name?: string; bio?: string; avatar_url?: string } = {}
+  if (input.fullName !== undefined) {
+    const trimmed = input.fullName.trim()
+    updates.full_name = trimmed
+    updates.display_name = trimmed
+  }
   if (input.bio !== undefined) updates.bio = input.bio.trim()
   if (input.avatarUrl !== undefined) updates.avatar_url = input.avatarUrl.trim()
 
@@ -124,8 +130,12 @@ export async function updateProfile(
 
   // Đồng thời cập nhật cả metadata trên Supabase Auth để tên cập nhật tức thì trên giao diện
   if (input.fullName !== undefined) {
+    const trimmed = input.fullName.trim()
     await supabase.auth.updateUser({
-      data: { full_name: input.fullName.trim() },
+      data: {
+        full_name: trimmed,
+        display_name: trimmed,
+      },
     })
   }
 }

@@ -14,7 +14,10 @@ interface RawPoemItem {
   source_citation?: string | null
   likes_count?: number | null
   created_at: string
-  profiles?: { full_name?: string | null } | { full_name?: string | null }[] | null
+  profiles?:
+    | { full_name?: string | null; display_name?: string | null }
+    | { full_name?: string | null; display_name?: string | null }[]
+    | null
   poem_tags?: { tags?: { name?: string | null } | null }[] | null
 }
 
@@ -37,9 +40,9 @@ function mapRawPoem(item: RawPoemItem): Poem {
   let curatorName: string | undefined = undefined
   if (item.profiles) {
     if (Array.isArray(item.profiles) && item.profiles.length > 0) {
-      curatorName = item.profiles[0]?.full_name || undefined
+      curatorName = item.profiles[0]?.full_name || item.profiles[0]?.display_name || undefined
     } else if (!Array.isArray(item.profiles)) {
-      curatorName = item.profiles.full_name || undefined
+      curatorName = item.profiles.full_name || item.profiles.display_name || undefined
     }
   }
 
@@ -92,7 +95,7 @@ export async function getPoems(): Promise<Poem[]> {
     // 1. Truy vấn đầy đủ các cột mới kèm tags
     const resWithProfile = await supabase
       .from('poems')
-      .select('id, title, content, author, author_type, mood, author_id, image_url, is_public, source_citation, likes_count, created_at, profiles!author_id(full_name), poem_tags(tags(name))')
+      .select('id, title, content, author, author_type, mood, author_id, image_url, is_public, source_citation, likes_count, created_at, profiles!author_id(full_name, display_name), poem_tags(tags(name))')
       .order('created_at', { ascending: false })
 
     if (!resWithProfile.error && resWithProfile.data) {
@@ -102,7 +105,7 @@ export async function getPoems(): Promise<Poem[]> {
     // 2. Fallback nếu DB chưa chạy migration cột mới
     const fallbackProfile = await supabase
       .from('poems')
-      .select('id, title, content, author, mood, author_id, image_url, created_at, profiles!author_id(full_name)')
+      .select('id, title, content, author, mood, author_id, image_url, created_at, profiles!author_id(full_name, display_name)')
       .order('created_at', { ascending: false })
 
     if (!fallbackProfile.error && fallbackProfile.data) {
@@ -134,7 +137,7 @@ export async function getPoemById(id: string): Promise<Poem | undefined> {
   try {
     const resWithProfile = await supabase
       .from('poems')
-      .select('id, title, content, author, author_type, mood, author_id, image_url, is_public, source_citation, likes_count, created_at, profiles!author_id(full_name), poem_tags(tags(name))')
+      .select('id, title, content, author, author_type, mood, author_id, image_url, is_public, source_citation, likes_count, created_at, profiles!author_id(full_name, display_name), poem_tags(tags(name))')
       .eq('id', id)
       .single()
 
@@ -144,7 +147,7 @@ export async function getPoemById(id: string): Promise<Poem | undefined> {
 
     const fallbackProfile = await supabase
       .from('poems')
-      .select('id, title, content, author, mood, author_id, image_url, created_at, profiles!author_id(full_name)')
+      .select('id, title, content, author, mood, author_id, image_url, created_at, profiles!author_id(full_name, display_name)')
       .eq('id', id)
       .single()
 

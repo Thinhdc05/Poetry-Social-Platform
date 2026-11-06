@@ -6,8 +6,14 @@ import { MOODS } from '../../features/reading'
 
 export function EditPoemPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
+
+  const emailPrefix = user?.email?.split('@')[0] || ''
+  const myPenName =
+    profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+      ? profile.fullName
+      : user?.user_metadata?.full_name || profile?.fullName || emailPrefix || 'Bạn Thơ'
 
   const [initialLoading, setInitialLoading] = useState(true)
   const [permissionError, setPermissionError] = useState<string | null>(null)
@@ -112,7 +118,7 @@ export function EditPoemPage() {
     const finalAuthor =
       authorType === 'collected'
         ? collectedAuthor.trim()
-        : user?.user_metadata?.full_name || 'Bạn Thơ'
+        : myPenName
 
     try {
       setSaving(true)
@@ -225,8 +231,8 @@ export function EditPoemPage() {
             </h2>
             <p className="mt-2 text-xs text-stone-500 font-serif">
               {authorType === 'collected'
-                ? `Tác giả: ${collectedAuthor || 'Chưa nhập'} • Người chép: ${user?.user_metadata?.full_name || 'Bạn'}`
-                : `Sáng tác: ${user?.user_metadata?.full_name || 'Bạn'}`} • Bản xem trước
+                ? `Tác giả: ${collectedAuthor || 'Chưa nhập'} • Người chép: ${myPenName}`
+                : `Sáng tác: ${myPenName}`} • Bản xem trước
             </p>
           </header>
           <div className="font-serif text-lg text-stone-900 dark:text-stone-100 leading-loose whitespace-pre-line text-center max-w-md mx-auto py-4">

@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
-import { signOut as apiSignOut, getProfile } from './auth.api'
+import { signOut as apiSignOut, getProfile, updateProfile } from './auth.api'
 import type { UserProfile } from './auth.types'
 
 export interface AuthContextType {
@@ -22,9 +22,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (currentUser: User) => {
     try {
-      const userProfile = await getProfile(userId)
+      const userProfile = await getProfile(currentUser.id)
+      const metaName = (
+        (currentUser.user_metadata?.full_name as string) ||
+        (currentUser.user_metadata?.display_name as string) ||
+        ''
+      ).trim()
+      const emailPrefix = currentUser.email?.split('@')[0] || ''
+
+      // Tự động chữa lành (Self-healing): nếu DB bị lưu nhầm email prefix thay vì bút danh đã đăng ký
+      if (
+        metaName &&
+        (!userProfile?.fullName ||
+          (emailPrefix && userProfile.fullName.toLowerCase() === emailPrefix.toLowerCase()))
+      ) {
+        if (userProfile) {
+          userProfile.fullName = metaName
+        }
+        // Đồng bộ ngược lại vào bảng profiles để chuẩn hóa vĩnh viễn trên cơ sở dữ liệu
+        updateProfile(currentUser.id, { fullName: metaName }).catch(() => {})
+      }
+
       setProfile(userProfile)
     } catch (err) {
       console.error('Không thể tải profile:', err)
@@ -33,10 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshProfile = useCallback(async () => {
-    if (user?.id) {
-      await loadProfile(user.id)
+    if (user) {
+      await loadProfile(user)
     }
-  }, [user?.id, loadProfile])
+  }, [user, loadProfile])
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -51,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const currentUser = session?.user ?? null
         setUser(currentUser)
         if (currentUser) {
-          await loadProfile(currentUser.id)
+          await loadProfile(currentUser)
         }
         setLoading(false)
       })
@@ -66,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const currentUser = session?.user ?? null
       setUser(currentUser)
       if (currentUser) {
-        await loadProfile(currentUser.id)
+        await loadProfile(currentUser)
       } else {
         setProfile(null)
       }

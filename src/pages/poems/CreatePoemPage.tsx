@@ -22,10 +22,16 @@ const DRAFT_TITLE_KEY = 'tho_moc_draft_title'
 const DRAFT_CONTENT_KEY = 'tho_moc_draft_content'
 
 export function CreatePoemPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const emailPrefix = user?.email?.split('@')[0] || ''
+  const myPenName =
+    profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+      ? profile.fullName
+      : user?.user_metadata?.full_name || profile?.fullName || emailPrefix || 'Bạn Thơ'
 
   const currentWeeklyChallenge = useMemo(() => getCurrentWeeklyChallenge(), [])
   const challengeTag = searchParams.get('challenge')
@@ -150,7 +156,7 @@ export function CreatePoemPage() {
     const finalAuthor =
       authorType === 'collected'
         ? collectedAuthor.trim()
-        : user.user_metadata?.full_name || 'Bạn Thơ'
+        : myPenName
 
     try {
       setLoading(true)
@@ -258,7 +264,7 @@ export function CreatePoemPage() {
               Tác giả:{' '}
               {authorType === 'collected'
                 ? collectedAuthor || 'Khuyết danh'
-                : user?.user_metadata?.full_name || 'Bạn'}
+                : myPenName}
               {!isPublic && (
                 <span className="ml-2 text-rose-600 dark:text-rose-400 font-sans">
                   • 🔒 Riêng tư
@@ -404,7 +410,7 @@ export function CreatePoemPage() {
                   <span>Sáng tác của tôi</span>
                 </div>
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">
-                  Bút danh tác giả: <strong>{user?.user_metadata?.full_name || 'Bản thân bạn'}</strong>
+                  Bút danh tác giả: <strong>{myPenName}</strong>
                 </p>
               </button>
 

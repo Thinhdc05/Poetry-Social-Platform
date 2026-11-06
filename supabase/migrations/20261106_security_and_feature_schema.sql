@@ -319,5 +319,49 @@ create policy "Mọi người có thể gửi báo cáo" on public.poem_reports 
 drop policy if exists "Chỉ admin mới được xem danh sách báo cáo" on public.poem_reports;
 create policy "Chỉ admin mới được xem danh sách báo cáo" on public.poem_reports for select using (public.is_admin());
 
+-- 11. CẬP NHẬT TRIGGER TỰ TẠO PROFILE: ƯU TIÊN BÚT DANH (FULL_NAME & DISPLAY_NAME)
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_pen_name text;
+begin
+  v_pen_name := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'full_name'), ''),
+    nullif(trim(new.raw_user_meta_data->>'display_name'), ''),
+    split_part(new.email, '@', 1)
+  );
+
+  insert into public.profiles (
+    id,
+    display_name,
+    full_name
+  )
+  values (
+    new.id,
+    v_pen_name,
+    v_pen_name
+  )
+  on conflict (id) do update set
+    display_name = coalesce(public.profiles.display_name, excluded.display_name),
+    full_name = coalesce(public.profiles.full_name, excluded.full_name);
+
+  return new;
+end;
+$$;
+
+-- Tự động sửa lại bút danh cho các user bị lưu nhầm email prefix từ trước
+update public.profiles p
+set
+  full_name = coalesce(nullif(trim(u.raw_user_meta_data->>'full_name'), ''), p.full_name),
+  display_name = coalesce(nullif(trim(u.raw_user_meta_data->>'full_name'), ''), p.display_name)
+from auth.users u
+where p.id = u.id
+  and u.raw_user_meta_data->>'full_name' is not null
+  and trim(u.raw_user_meta_data->>'full_name') != '';
+
 -- Tải lại cấu hình schema của PostgREST
 notify pgrst, 'reload schema';

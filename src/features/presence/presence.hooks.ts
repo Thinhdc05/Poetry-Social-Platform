@@ -96,15 +96,15 @@ function getOrInitPresenceChannel(myId: string, currentPenName: string, currentS
 }
 
 export function useOnlinePresence() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [onlinePoets, setOnlinePoets] = useState<OnlinePoet[]>(() => {
     if (sharedOnlinePoets.length > 0) return sharedOnlinePoets
-    const name = user?.user_metadata?.full_name || 'Bạn Thơ'
+    const name = profile?.fullName || user?.user_metadata?.full_name || 'Bạn Thơ'
     return [
       {
         id: user?.id || 'current-poet',
         penName: name,
-        seal: name.charAt(0).toUpperCase() || '📜',
+        seal: profile?.avatarUrl || user?.user_metadata?.avatar_url || name.charAt(0).toUpperCase() || '📜',
         status: 'Đang thưởng ngoạn thi đàn',
         joinedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       },
@@ -113,8 +113,21 @@ export function useOnlinePresence() {
   const [myStatus, setMyStatus] = useState('Đang thưởng ngoạn thi đàn')
 
   useEffect(() => {
-    let currentPenName = user?.user_metadata?.full_name || 'Khách Thơ'
-    let currentSeal = currentPenName.charAt(0).toUpperCase() || '📜'
+    const emailPrefix = user?.email?.split('@')[0] || ''
+    const metaName = (
+      (user?.user_metadata?.full_name as string) ||
+      (user?.user_metadata?.display_name as string) ||
+      ''
+    ).trim()
+
+    let currentPenName =
+      profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+        ? profile.fullName
+        : metaName || profile?.fullName || emailPrefix || 'Khách Thơ'
+
+    let currentSeal =
+      profile?.avatarUrl || user?.user_metadata?.avatar_url || currentPenName.charAt(0).toUpperCase() || '📜'
+
     let guestId = 'current-poet'
     try {
       guestId = window.sessionStorage.getItem('tho_moc_guest_id') || ''
@@ -131,8 +144,10 @@ export function useOnlinePresence() {
     if (user?.id) {
       getProfile(user.id).then((p) => {
         if (p?.fullName) {
-          currentPenName = p.fullName
-          currentSeal = p.fullName.charAt(0).toUpperCase()
+          if (!(metaName && emailPrefix && p.fullName.toLowerCase() === emailPrefix.toLowerCase())) {
+            currentPenName = p.fullName
+            currentSeal = p.avatarUrl || p.fullName.charAt(0).toUpperCase()
+          }
         }
       })
     }
@@ -166,24 +181,36 @@ export function useOnlinePresence() {
       presenceListeners.delete(listener)
       activeListenersCount--
     }
-  }, [user, myStatus])
+  }, [user, profile, myStatus])
 
   const updateStatus = useCallback(
     (newStatus: string) => {
       setMyStatus(newStatus)
       if (sharedPresenceChannel && user) {
+        const emailPrefix = user.email?.split('@')[0] || ''
+        const metaName = (
+          (user.user_metadata?.full_name as string) ||
+          (user.user_metadata?.display_name as string) ||
+          ''
+        ).trim()
+        const penName =
+          profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+            ? profile.fullName
+            : metaName || profile?.fullName || emailPrefix || 'Khách Thơ'
+        const seal = profile?.avatarUrl || user.user_metadata?.avatar_url || penName.charAt(0).toUpperCase()
+
         sharedPresenceChannel
           .track({
             id: user.id,
-            penName: user.user_metadata?.full_name || 'Khách Thơ',
-            seal: (user.user_metadata?.full_name || 'K').charAt(0).toUpperCase(),
+            penName,
+            seal,
             status: newStatus,
             joinedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
           })
           .catch(() => {})
       }
     },
-    [user]
+    [user, profile]
   )
 
   const effectiveCount = Math.max(1, onlinePoets.length)
@@ -197,7 +224,7 @@ export function useOnlinePresence() {
 }
 
 export function usePoeticLounge() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [messages, setMessages] = useState<LoungeMessage[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -272,8 +299,22 @@ export function usePoeticLounge() {
       if (!content.trim()) return
 
       const myId = user?.id || undefined
-      const myName = user?.user_metadata?.full_name || 'Khách Thơ'
-      const mySeal = user?.user_metadata?.avatar_url || '📜'
+      const emailPrefix = user?.email?.split('@')[0] || ''
+      const metaName = (
+        (user?.user_metadata?.full_name as string) ||
+        (user?.user_metadata?.display_name as string) ||
+        ''
+      ).trim()
+
+      const myName =
+        profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+          ? profile.fullName
+          : metaName || profile?.fullName || emailPrefix || 'Khách Thơ'
+
+      const mySeal =
+        profile?.avatarUrl ||
+        user?.user_metadata?.avatar_url ||
+        '📜'
 
       // Cập nhật giao diện tức thì (Optimistic update)
       const tempId = `temp-${Date.now()}`
@@ -305,7 +346,7 @@ export function usePoeticLounge() {
         )
       }
     },
-    [user]
+    [user, profile]
   )
 
   return {

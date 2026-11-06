@@ -12,28 +12,39 @@ import { Feather, Bookmark, Sparkles, Settings, Edit3, Trash2, Globe, Lock, Eye,
 type ProfileTab = 'authored' | 'saved' | 'highlights' | 'settings'
 
 export function ProfilePage() {
-  const { user } = useAuth()
+  const { user, profile: authProfile, refreshProfile } = useAuth()
   const { poems, loading, refetch } = usePoems()
   const { bookmarkedIds } = useBookmarks()
   const [activeTab, setActiveTab] = useState<ProfileTab>('authored')
   const [poemToDelete, setPoemToDelete] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
 
+  const emailPrefix = user?.email?.split('@')[0] || ''
+  const metaName = (
+    (user?.user_metadata?.full_name as string) ||
+    (user?.user_metadata?.display_name as string) ||
+    ''
+  ).trim()
+
   const loadUserProfile = useCallback(async () => {
     if (!user) return
     const p = await getProfile(user.id)
-    if (p) setProfile(p)
-  }, [user])
+    if (p) {
+      if (metaName && emailPrefix && p.fullName?.toLowerCase() === emailPrefix.toLowerCase()) {
+        p.fullName = metaName
+      }
+      setProfile(p)
+    }
+  }, [user, metaName, emailPrefix])
 
   useEffect(() => {
     loadUserProfile()
   }, [loadUserProfile])
 
   const displayName =
-    profile?.fullName ||
-    user?.user_metadata?.full_name ||
-    user?.email?.split('@')[0] ||
-    'Thi Nhân Ẩn Danh'
+    profile?.fullName && profile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+      ? profile.fullName
+      : metaName || profile?.fullName || authProfile?.fullName || emailPrefix || 'Thi Nhân Ẩn Danh'
 
   const savedPoems = useMemo(
     () => poems.filter((p) => bookmarkedIds.includes(p.id)),

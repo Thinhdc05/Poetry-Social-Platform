@@ -28,12 +28,22 @@ export function ProfileSettingsSection({
   profile: propProfile,
   onProfileUpdated,
 }: ProfileSettingsSectionProps) {
-  const { user: authUser } = useAuth()
+  const { user: authUser, refreshProfile } = useAuth()
   const currentUser = propUser || authUser
 
-  const [fullName, setFullName] = useState(
-    propProfile?.fullName || currentUser?.user_metadata?.full_name || ''
-  )
+  const emailPrefix = currentUser?.email?.split('@')[0] || ''
+  const metaName = (
+    (currentUser?.user_metadata?.full_name as string) ||
+    (currentUser?.user_metadata?.display_name as string) ||
+    ''
+  ).trim()
+
+  const initialFullName =
+    propProfile?.fullName && propProfile.fullName.toLowerCase() !== emailPrefix.toLowerCase()
+      ? propProfile.fullName
+      : metaName || propProfile?.fullName || ''
+
+  const [fullName, setFullName] = useState(initialFullName)
   const [bio, setBio] = useState(propProfile?.bio || '')
   const [selectedSeal, setSelectedSeal] = useState(
     propProfile?.avatarUrl || currentUser?.user_metadata?.avatar_url || '📜'
@@ -52,14 +62,23 @@ export function ProfileSettingsSection({
     let isMounted = true
     getProfile(currentUser.id).then((p) => {
       if (!isMounted || !p) return
-      if (p.fullName) setFullName(p.fullName)
+      if (p.fullName) {
+        if (metaName && emailPrefix && p.fullName.toLowerCase() === emailPrefix.toLowerCase()) {
+          setFullName(metaName)
+        } else {
+          setFullName(p.fullName)
+        }
+      } else if (metaName) {
+        setFullName(metaName)
+      }
+
       if (p.bio) setBio(p.bio)
       if (p.avatarUrl) setSelectedSeal(p.avatarUrl)
     })
     return () => {
       isMounted = false
     }
-  }, [currentUser])
+  }, [currentUser, metaName, emailPrefix])
 
   if (!currentUser) {
     return null
@@ -82,6 +101,7 @@ export function ProfileSettingsSection({
         avatarUrl: selectedSeal,
       })
       setProfileMsg({ type: 'success', text: '✨ Đã lưu cập nhật thông tin bút danh thành công!' })
+      refreshProfile?.()
       onProfileUpdated?.()
       setTimeout(() => setProfileMsg(null), 4000)
     } catch (err: unknown) {
